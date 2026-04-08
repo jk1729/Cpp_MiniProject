@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Movie Ticket Booking</title>
+
+<style>
+body {
+    margin:0;
+    background:#0b0f2a;
+    color:#00ffcc;
+    font-family:monospace;
+}
+
+.header {
+    text-align:center;
+    padding:20px;
+    font-size:28px;
+    background:#10163a;
+}
+
+.container {
+    display:flex;
+    padding:20px;
+    gap:20px;
+}
+
+.menu {
+    width:30%;
+    border:1px solid #00ffcc;
+    padding:15px;
+    border-radius:10px;
+}
+
+.menu button {
+    width:100%;
+    margin:10px 0;
+    padding:12px;
+    background:#001f3f;
+    border:1px solid #00ffcc;
+    color:#00ffcc;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.menu button:hover {
+    background:#003366;
+}
+
+.console {
+    width:70%;
+    border:1px solid #00ffcc;
+    padding:15px;
+    border-radius:10px;
+}
+
+#output {
+    background:black;
+    height:350px;
+    overflow:auto;
+    padding:10px;
+}
+
+.inputBox {
+    display:flex;
+    margin-top:10px;
+}
+
+.inputBox input {
+    flex:1;
+    padding:10px;
+    background:black;
+    color:#00ffcc;
+    border:1px solid #00ffcc;
+}
+
+.inputBox button {
+    padding:10px;
+    background:#00ffcc;
+    border:none;
+    cursor:pointer;
+}
+</style>
+
+<script>
+var Module = {
+    print: function(text){
+        appendOutput(text);
+    }
+};
+
+let currentAction = 0;
+let step = 0;
+
+// ===== OUTPUT HELPER =====
+function appendOutput(text){
+    let out = document.getElementById("output");
+    out.innerHTML += text + "<br>";
+    out.scrollTop = out.scrollHeight;
+}
+
+// ===== ON LOAD =====
+window.onload = function(){
+    appendOutput("🎬 Welcome to Movie Ticket Booking System");
+    appendOutput("----------------------------------------");
+    appendOutput("👉 Click a menu option to begin\n");
+
+    document.getElementById("userInput").addEventListener("keypress", function(e){
+        if(e.key === "Enter"){
+            sendInput();
+        }
+    });
+};
+
+// ===== CLEAR OUTPUT =====
+function clearOutput(){
+    document.getElementById("output").innerHTML="";
+}
+
+// ===== MENU ACTION =====
+function action(a){
+    currentAction = a;
+    step = 0;
+    clearOutput();
+
+    let input = document.getElementById("userInput");
+
+    input.placeholder = "Enter input...";
+
+    if(a===1){
+        Module.ccall('listShows');
+    }
+
+    else if(a===2){
+        appendOutput("👉 Enter show number to view seats:");
+        input.placeholder = "Example: 1";
+    }
+
+    else if(a===3){
+        appendOutput("👉 Step 1: Enter show number");
+        input.placeholder = "Example: 1";
+    }
+
+    else if(a===4){
+        appendOutput("👉 Enter Booking ID:");
+        input.placeholder = "Example: BK1";
+    }
+
+    else if(a===5){
+        Module.ccall('report');
+    }
+
+    else if(a===6){
+        Module.ccall('viewAll');
+    }
+
+    else if(a===7){
+        appendOutput("👉 Enter Booking ID to cancel:");
+        input.placeholder = "Example: BK1";
+    }
+}
+
+// ===== INPUT HANDLER =====
+function sendInput(){
+    let inputBox = document.getElementById("userInput");
+    let val = inputBox.value.trim();
+
+    if(val === "") return;
+
+    appendOutput("<span style='color:white'>>> " + val + "</span>");
+
+    // ===== DISPLAY SEATS =====
+    if(currentAction===2){
+        Module.ccall('showSeats',null,['number'],[parseInt(val)]);
+    }
+
+    // ===== BOOKING FLOW =====
+    else if(currentAction===3){
+
+        // Step 1 → show selection
+        if(step===0){
+            Module.ccall('startBooking',null,['number'],[parseInt(val)]);
+            appendOutput("👉 Step 2: Enter your name");
+            inputBox.placeholder = "Enter your name";
+            step = 1;
+        }
+
+        // Step 2 → name
+        else if(step===1){
+            Module.ccall('setName',null,['string'],[val]);
+            appendOutput("👉 Step 3: Enter seats (A1, B2...) or 'done'");
+            inputBox.placeholder = "A1 / B2 / done";
+            step = 2;
+        }
+
+        // Step 3 → seats
+        else if(step===2){
+            Module.ccall('addSeat',null,['string'],[val]);
+
+            if(val.toLowerCase() === "done"){
+                appendOutput("👉 Type 'confirm' to book OR 'cancel'");
+                inputBox.placeholder = "confirm / cancel";
+            }
+
+            if(val.toLowerCase() === "confirm" || val.toLowerCase() === "cancel"){
+                appendOutput("👉 Booking flow finished. Choose next action.");
+                step = 0;
+            }
+        }
+    }
+
+    // ===== SEARCH =====
+    else if(currentAction===4){
+        Module.ccall('searchBooking',null,['string'],[val]);
+    }
+
+    // ===== CANCEL =====
+    else if(currentAction===7){
+        Module.ccall('cancelBooking',null,['string'],[val]);
+    }
+
+    inputBox.value="";
+}
+</script>
+
+<script src="theatre.js"></script>
+
+</head>
+
+<body>
+
+<div class="header">
+🎬 Movie Ticket Booking System  
+
+</div>
+
+<div class="container">
+
+<div class="menu">
+<h3>📋 Menu</h3>
+
+<button onclick="action(1)">1. List Shows</button>
+<button onclick="action(2)">2. Display Seats</button>
+<button onclick="action(3)">3. Book Seats</button>
+<button onclick="action(4)">4. Search Booking</button>
+<button onclick="action(5)">5. Report</button>
+<button onclick="action(6)">6. View All</button>
+<button onclick="action(7)">7. Cancel Booking</button>
+
+</div>
+
+<div class="console">
+<h3>💻 Console</h3>
+
+<pre id="output"></pre>
+
+<div class="inputBox">
+<input id="userInput" placeholder="Enter input here..." />
+<button onclick="sendInput()">Enter</button>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
